@@ -1,122 +1,136 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from "react";
+
+import stockJson from "./data/stock.json";
+import recipesJson from "./data/recipes.json";
+
+import type { Recipe, StockItem } from "./types";
+
+import StockTable from "./components/StockTable";
+import Menu from "./components/Menu";
+import AddIngredientForm from "./components/AddIngredientForm";
+
+import { placeOrder } from "./services/order";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [stock, setStock] = useState<StockItem[]>(stockJson as StockItem[]);
+
+  const [message, setMessage] = useState("");
+
+  const recipes = recipesJson as Recipe[];
+
+  function handleUpdateStock(name: string, qty: number, par: number) {
+    setStock((current) =>
+      current.map((item) =>
+        item.name === name
+          ? {
+              ...item,
+              qty,
+              par,
+            }
+          : item,
+      ),
+    );
+
+    setMessage(`${name} updated successfully`);
+  }
+
+  function handleAddIngredient(item: StockItem) {
+    setStock((current) => [...current, item]);
+
+    setMessage(`${item.name} added successfully`);
+  }
+
+  function handleDeleteIngredient(name: string) {
+    const usedBy = recipes.filter((recipe) =>
+      recipe.ingredients.some((ingredient) => ingredient.name === name),
+    );
+
+    if (usedBy.length > 0) {
+      alert(
+        `${name} cannot be deleted because it is used by: ${usedBy
+          .map((recipe) => recipe.dish)
+          .join(", ")}`,
+      );
+
+      return;
+    }
+
+    setStock((current) => current.filter((item) => item.name !== name));
+
+    setMessage(`${name} deleted successfully`);
+  }
+
+  function handleOrder(recipe: Recipe) {
+    try {
+      const updatedStock = placeOrder(recipe, stock);
+
+      setStock(updatedStock);
+
+      setMessage(`${recipe.dish} ordered successfully`);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Unable to place order",
+      );
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header */}
+        <header className="mb-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                Palyt Kitchen
+              </h1>
 
-      <div className="ticks"></div>
+              <p className="mt-1 text-sm text-slate-500">
+                Manage kitchen inventory and live menu availability
+              </p>
+            </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+            <div className="text-sm text-slate-500">
+              {stock.length} ingredients
+            </div>
+          </div>
+        </header>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Message */}
+        {message && (
+          <div className="mb-6 flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p className="text-sm font-medium text-emerald-700">{message}</p>
+
+            <button
+              onClick={() => setMessage("")}
+              className="text-sm text-emerald-600 transition hover:text-emerald-800"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Main layout */}
+        <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+          {/* Left */}
+          <div className="space-y-6">
+            <StockTable
+              stock={stock}
+              onUpdate={handleUpdateStock}
+              onDelete={handleDeleteIngredient}
+            />
+
+            <AddIngredientForm stock={stock} onAdd={handleAddIngredient} />
+          </div>
+
+          {/* Right */}
+          <div>
+            <Menu recipes={recipes} stock={stock} onOrder={handleOrder} />
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }
 
-export default App
+export default App;
