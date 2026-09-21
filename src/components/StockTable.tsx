@@ -4,15 +4,18 @@ import type { StockItem } from "../types";
 
 interface Props {
   stock: StockItem[];
+
   onUpdate: (name: string, qty: number, par: number) => void;
+
+  onDelete: (name: string) => void;
 }
 
-export default function StockTable({ stock, onUpdate }: Props) {
+export default function StockTable({ stock, onUpdate, onDelete }: Props) {
   const [editingName, setEditingName] = useState<string | null>(null);
 
   const [qty, setQty] = useState("");
-
   const [par, setPar] = useState("");
+  const [search, setSearch] = useState("");
 
   function startEdit(item: StockItem) {
     setEditingName(item.name);
@@ -40,9 +43,20 @@ export default function StockTable({ stock, onUpdate }: Props) {
     setEditingName(null);
   }
 
+  const filteredStock = stock.filter((item) =>
+    item.name.toLowerCase().includes(search.trim().toLowerCase()),
+  );
+
   return (
     <section>
       <h2>Kitchen Stock</h2>
+
+      <input
+        type="search"
+        placeholder="Search ingredients"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+      />
 
       <table>
         <thead>
@@ -56,7 +70,7 @@ export default function StockTable({ stock, onUpdate }: Props) {
         </thead>
 
         <tbody>
-          {stock.map((item) => {
+          {filteredStock.map((item) => {
             const editing = editingName === item.name;
 
             return (
@@ -103,6 +117,8 @@ export default function StockTable({ stock, onUpdate }: Props) {
                   ) : (
                     <button onClick={() => startEdit(item)}>Edit</button>
                   )}
+
+                  <button onClick={() => onDelete(item.name)}>Delete</button>
                 </td>
               </tr>
             );

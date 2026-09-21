@@ -7,6 +7,7 @@ import type { Recipe, StockItem } from "./types";
 
 import StockTable from "./components/StockTable";
 import Menu from "./components/Menu";
+import AddIngredientForm from "./components/AddIngredientForm";
 
 import { placeOrder } from "./services/order";
 
@@ -33,6 +34,28 @@ function App() {
     );
   }
 
+  function handleAddIngredient(item: StockItem) {
+    setStock((current) => [...current, item]);
+  }
+
+  function handleDeleteIngredient(name: string) {
+    const usedBy = recipes.filter((recipe) =>
+      recipe.ingredients.some((ingredient) => ingredient.name === name),
+    );
+
+    if (usedBy.length > 0) {
+      alert(
+        `${name} cannot be deleted because it is used by: ${usedBy
+          .map((recipe) => recipe.dish)
+          .join(", ")}`,
+      );
+
+      return;
+    }
+
+    setStock((current) => current.filter((item) => item.name !== name));
+  }
+
   function handleOrder(recipe: Recipe) {
     try {
       const updatedStock = placeOrder(recipe, stock);
@@ -54,7 +77,12 @@ function App() {
       {message && <p>{message}</p>}
 
       <div className="layout">
-        <StockTable stock={stock} onUpdate={handleUpdateStock} />
+        <StockTable
+          stock={stock}
+          onUpdate={handleUpdateStock}
+          onDelete={handleDeleteIngredient}
+        />
+        <AddIngredientForm stock={stock} onAdd={handleAddIngredient} />
 
         <Menu recipes={recipes} stock={stock} onOrder={handleOrder} />
       </div>
