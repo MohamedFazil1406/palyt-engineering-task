@@ -19,6 +19,20 @@ function App() {
 
   const recipes = recipesJson as Recipe[];
 
+  function handleUpdateStock(name: string, qty: number, par: number) {
+    setStock((current) =>
+      current.map((item) =>
+        item.name === name
+          ? {
+              ...item,
+              qty,
+              par,
+            }
+          : item,
+      ),
+    );
+  }
+
   function handleOrder(recipe: Recipe) {
     try {
       const updatedStock = placeOrder(recipe, stock);
@@ -40,7 +54,7 @@ function App() {
       {message && <p>{message}</p>}
 
       <div className="layout">
-        <StockTable stock={stock} />
+        <StockTable stock={stock} onUpdate={handleUpdateStock} />
 
         <Menu recipes={recipes} stock={stock} onOrder={handleOrder} />
       </div>
